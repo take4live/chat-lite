@@ -40,6 +40,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# pull'd env (often contains secrets — do not commit)
+.env.vercel.*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel

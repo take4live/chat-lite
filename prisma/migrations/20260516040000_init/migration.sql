@@ -1,4 +1,4 @@
-﻿-- CreateEnum
+-- CreateEnum
 CREATE TYPE "WorkspaceRole" AS ENUM ('ADMIN', 'MEMBER');
 
 -- CreateTable
