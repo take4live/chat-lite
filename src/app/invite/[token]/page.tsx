@@ -28,7 +28,7 @@ export default async function InvitePage({ params }: Props) {
             </Link>
             <Link
               className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 no-underline hover:border-slate-500"
-              href={`/signup?callback=${encodeURIComponent(`/invite/${token}`)}`}
+              href={`/signup`}
             >
               登録する
             </Link>
