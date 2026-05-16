@@ -35,6 +35,20 @@ npm run dev
 - Vercel では **環境変数**に `DATABASE_URL`・`NEXTAUTH_SECRET`・`NEXTAUTH_URL`（本番の絶対 URL）を設定してからデプロイします。
 - リアルタイムは **約 2.5 秒間隔のポーリング**です。恒久 WebSocket が必要になった場合は別サービス連携への拡張を想定しています。
 
+### Vercel ビルドが `P3009`（migration failed）で止まる場合
+
+初回デプロイでマイグレーション SQL が失敗した場合、DB の `_prisma_migrations` に **失敗状態**が残り、以降のビルドが **`migrate deploy` で止まる**ことがあります（BOM のほかにも起こりえます）。
+
+**空のデータベース / 開発用だけ切り替え可能**なら、DB を作り直すのが最短です。
+
+同じデータベースを使い続ける場合は、`DATABASE_URL` を本番と同じ値にしたローカルの `.env` で次を実行し、失敗済みとしてマークしてから再デプロイします。
+
+```bash
+npx prisma migrate resolve --rolled-back "20260516040000_init"
+```
+
+その後、Vercel から **Redeploy** を実行すると `prisma migrate deploy` がマイグレーションを適用できるようになります。
+
 ## 主なルート
 
 | パス | 説明 |
