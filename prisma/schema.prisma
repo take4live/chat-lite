@@ -1,0 +1,121 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceRole {
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id             String               @id @default(cuid())
+  email          String               @unique
+  passwordHash   String
+  name           String               @default("Member")
+  image          String?
+  createdAt      DateTime             @default(now())
+  memberships    WorkspaceMember[]
+  invitesCreated Invite[]
+  authored       Message[]
+  dmParticipants DmParticipant[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String               @id @default(cuid())
+  name      String
+  slug      String               @unique
+  createdAt DateTime             @default(now())
+  channels  Channel[]
+  members   WorkspaceMember[]
+  invites   Invite[]
+  dmThreads DmThread[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String         @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole  @default(MEMBER)
+  joinedAt    DateTime       @default(now())
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Invite {
+  id          String      @id @default(cuid())
+  workspaceId String
+  token       String      @unique
+  createdById String
+  expiresAt   DateTime?
+  createdAt   DateTime    @default(now())
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     User        @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("invites")
+}
+
+model Channel {
+  id          String      @id @default(cuid())
+  workspaceId String
+  name        String
+  topic       String?
+  createdAt   DateTime    @default(now())
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@unique([workspaceId, name])
+  @@map("channels")
+}
+
+model Message {
+  id         String       @id @default(cuid())
+  channelId  String?
+  dmThreadId String?
+  authorId   String
+  body       String       @db.Text
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+  channel    Channel?     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  dmThread   DmThread?    @relation(fields: [dmThreadId], references: [id], onDelete: Cascade)
+  author     User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([dmThreadId, createdAt])
+  @@map("messages")
+}
+
+model DmThread {
+  id           String          @id @default(cuid())
+  workspaceId  String
+  createdAt    DateTime        @default(now())
+  workspace    Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  participants DmParticipant[]
+
+  @@map("dm_threads")
+}
+
+model DmParticipant {
+  id       String    @id @default(cuid())
+  threadId String
+  userId   String
+  thread   DmThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@map("dm_participants")
+}

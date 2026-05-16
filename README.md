@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chat Lite
 
-## Getting Started
+Slack に近い**簡易チームチャット**の MVPです。複数ワークスペース・公開チャンネル・メンバー同士の 1対1 DM・招待リンクがあり、サーバーレス向けには **定期的なフェッチによるメッセージ同期**（WebSocket は使わない）で動きます。
 
-First, run the development server:
+| 構成 | 技術 |
+|------|------|
+| フレームワーク | Next.js 16（App Router）・React 19 |
+| 認証 | NextAuth.js v4（Credentials + JWT） |
+| DB | PostgreSQL（Prisma 6） |
+
+## 必要な環境変数
+
+[`.env.example`](.env.example) を `.env` にコピーし、値を埋めます。
+
+- **`DATABASE_URL`** — Postgres の接続文字列（TLS が必要なホストでは `?sslmode=require` など）
+- **`NEXTAUTH_SECRET`** — ランダムな長い文字列（例: `openssl rand -base64 32`）
+- **`NEXTAUTH_URL`** — 本番では `https://あなたのドメイン`、ローカルでは `http://localhost:3000`
+
+## ローカル開発
 
 ```bash
+cp .env.example .env
+# .env に DATABASE_URL などを記入
+npm install
+npx prisma migrate deploy   # DB にスキーマを適用（初回）
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開き、**ユーザー登録**から最初のワークスペースと `#general` チャンネルが自動作成されます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 本番ビルド・Vercel 向けメモ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run build` は **`prisma generate` → `prisma migrate deploy` → `next build`** の順で実行します。**ビルド時に接続できる PostgreSQL が必須**です（環境変数 `DATABASE_URL`）。
+- Neon など PgBouncer 利用時は Prisma の [接続ドキュメント](https://www.prisma.io/docs/orm/overview/databases/neon)に従い、必要なら `directUrl` を追加してください。
+- Vercel では **環境変数**に `DATABASE_URL`・`NEXTAUTH_SECRET`・`NEXTAUTH_URL`（本番の絶対 URL）を設定してからデプロイします。
+- リアルタイムは **約 2.5 秒間隔のポーリング**です。恒久 WebSocket が必要になった場合は別サービス連携への拡張を想定しています。
 
-## Learn More
+## 主なルート
 
-To learn more about Next.js, take a look at the following resources:
+| パス | 説明 |
+|------|------|
+| `/signup`・`/login` | 登録・ログイン |
+| `/w/[workspaceId]/channel/[channelId]` | チャンネル |
+| `/w/[workspaceId]/dm/[peerUserId]` | DM |
+| `/invite/[token]` | ワークスペースへの招待 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ライセンス
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+必要に応じて `LICENSE` を追加してください。
