@@ -23,6 +23,7 @@ model User {
   memberships    WorkspaceMember[]
   invitesCreated Invite[]
   authored       Message[]
+  comments       MessageComment[]
   dmParticipants DmParticipant[]
 
   @@map("users")
@@ -91,11 +92,26 @@ model Message {
   deletedAt  DateTime?
   channel    Channel?     @relation(fields: [channelId], references: [id], onDelete: Cascade)
   dmThread   DmThread?    @relation(fields: [dmThreadId], references: [id], onDelete: Cascade)
-  author     User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author     User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments   MessageComment[]
 
   @@index([channelId, createdAt])
   @@index([dmThreadId, createdAt])
   @@map("messages")
+}
+
+model MessageComment {
+  id        String    @id @default(cuid())
+  messageId String
+  authorId  String
+  body      String    @db.Text
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  message   Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, createdAt])
+  @@map("message_comments")
 }
 
 model DmThread {

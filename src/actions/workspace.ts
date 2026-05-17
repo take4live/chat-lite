@@ -111,6 +111,37 @@ export async function sendDmMessage(workspaceId: string, peerUserId: string, for
   revalidatePath(`/w/${workspaceId}/dm/${peerUserId}`);
 }
 
+export async function addMessageComment(
+  workspaceId: string,
+  messageId: string,
+  formData: FormData,
+): Promise<void> {
+  const userId = await requireUser();
+  await requireMember(workspaceId, userId);
+
+  const parsed = messageSchema.safeParse({ body: formData.get("body") });
+  if (!parsed.success) return;
+
+  const message = await prisma.message.findFirst({
+    where: {
+      id: messageId,
+      deletedAt: null,
+      OR: [{ channel: { workspaceId } }, { dmThread: { workspaceId } }],
+    },
+  });
+  if (!message) return;
+
+  await prisma.messageComment.create({
+    data: {
+      messageId,
+      authorId: userId,
+      body: parsed.data.body,
+    },
+  });
+
+  revalidatePath(`/w/${workspaceId}`, "layout");
+}
+
 function appOrigin(): string {
   if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.replace(/\/$/, "");
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getDmThreadIdForPair } from "@/lib/dm";
+import { messageWithCommentsInclude, serializeMessage } from "@/lib/message-serializer";
 
 export async function GET(
   req: Request,
@@ -43,18 +44,11 @@ export async function GET(
       where: { channelId, deletedAt: null },
       orderBy: { createdAt: "asc" },
       take: 150,
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-      },
+      include: messageWithCommentsInclude,
     });
 
     return NextResponse.json({
-      messages: messages.map((m) => ({
-        id: m.id,
-        body: m.body,
-        createdAt: m.createdAt.toISOString(),
-        author: { id: m.author.id, name: m.author.name, email: m.author.email },
-      })),
+      messages: messages.map(serializeMessage),
     });
   }
 
@@ -78,17 +72,10 @@ export async function GET(
     where: { dmThreadId: threadId, deletedAt: null },
     orderBy: { createdAt: "asc" },
     take: 150,
-    include: {
-      author: { select: { id: true, name: true, email: true } },
-    },
+    include: messageWithCommentsInclude,
   });
 
   return NextResponse.json({
-    messages: messages.map((m) => ({
-      id: m.id,
-      body: m.body,
-      createdAt: m.createdAt.toISOString(),
-      author: { id: m.author.id, name: m.author.name, email: m.author.email },
-    })),
+    messages: messages.map(serializeMessage),
   });
 }
